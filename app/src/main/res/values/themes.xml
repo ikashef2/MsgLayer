@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MsgLayer" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#FF0B0C0E</item>
+        <item name="android:navigationBarColor">#FF0B0C0E</item>
+        <item name="android:windowBackground">#FF0B0C0E</item>
+        <item name="android:colorPrimary">#FFC8CBD0</item>
+    </style>
+</resources>
