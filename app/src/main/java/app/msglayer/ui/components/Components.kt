@@ -16,7 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import app.msglayer.ui.UiModifier
+import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import app.msglayer.ui.theme.Border
@@ -24,7 +24,7 @@ import app.msglayer.ui.theme.Surface
 import app.msglayer.ui.theme.TextSecondary
 
 @Composable
-fun SectionLabel(text: String, modifier: UiModifier = UiModifier) {
+fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelLarge,
@@ -35,7 +35,7 @@ fun SectionLabel(text: String, modifier: UiModifier = UiModifier) {
 
 @Composable
 fun QuietPanel(
-    modifier: UiModifier = UiModifier,
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -46,7 +46,7 @@ fun QuietPanel(
             .clip(shape)
             .background(Surface)
             .border(1.dp, Border, shape)
-            .then(if (onClick != null) UiModifier.clickable(onClick = onClick) else UiModifier)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(14.dp),
         content = content
     )
@@ -55,7 +55,7 @@ fun QuietPanel(
 @Composable
 fun KeyValueRow(label: String, value: String) {
     Row(
-        UiModifier.fillMaxWidth(),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -66,5 +66,5 @@ fun KeyValueRow(label: String, value: String) {
 
 @Composable
 fun VerticalSpacer(h: Int = 12) {
-    Spacer(UiModifier.height(h.dp))
+    Spacer(Modifier.height(h.dp))
 }

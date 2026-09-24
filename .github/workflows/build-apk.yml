@@ -17,17 +17,8 @@ jobs:
           cache: gradle
       - uses: android-actions/setup-android@v3
         with:
-          packages: platform-tools platforms;android-35 build-tools;34.0.0
+          packages: platform-tools platforms;android-34 build-tools;34.0.0
       - run: sed -i 's/\r$//' gradlew && chmod +x gradlew
-      - name: Locate Modifier class
-        run: |
-          ./gradlew :app:compileDebugKotlin --dry-run || true
-          ./gradlew :app:dependencies --configuration debugCompileClasspath > deps.txt
-          find ~/.gradle/caches/modules-2/files-2.1/androidx.compose.ui -name "*.jar" ! -name "*sources*" ! -name "*javadoc*" | tee jars.txt
-          while read -r j; do
-            echo "=== $j ==="
-            jar tf "$j" | grep -E "modifier/Modifier|Modifier/Modifier" | head -5 || true
-          done < jars.txt
       - run: ./gradlew assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:

@@ -12,7 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import app.msglayer.ui.UiModifier
+import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,7 +25,7 @@ import app.msglayer.ui.theme.TextSecondary
 fun ActivityScreen(vm: ActivityViewModel = hiltViewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
-        modifier = UiModifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -40,7 +40,7 @@ fun ActivityScreen(vm: ActivityViewModel = hiltViewModel()) {
                 if (action.undone) {
                     Text("Undone", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
                 } else if (action.undoable) {
-                    Row(UiModifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         TextButton(onClick = { vm.undo(action.id) }) { Text("Undo") }
                     }
                 }
