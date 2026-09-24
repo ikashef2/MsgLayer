@@ -151,6 +151,7 @@ class OrganizerRepository(
                     id = "fact-appt-${msg.id}",
                     type = FactType.APPOINTMENT_TIME,
                     value = msg.body.lines().first().take(80),
+                    normalizedValue = msg.body.lines().first().take(80),
                     displayValue = msg.body.lines().first().take(80),
                     validFrom = msg.timestamp,
                     confidence = 0.7f,

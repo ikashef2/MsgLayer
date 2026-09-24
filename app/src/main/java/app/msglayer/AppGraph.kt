@@ -46,7 +46,7 @@ object AppGraph {
         mockSource.refresh()
         repository.ingest(
             messages = MockSmsDataset.messages(System.currentTimeMillis()),
-            senders = MockSmsDataset.senders(),
+            sendersSeed = MockSmsDataset.senders(),
             sourceMode = SourceMode.MOCK
         )
         _status.value = _status.value.copy(
