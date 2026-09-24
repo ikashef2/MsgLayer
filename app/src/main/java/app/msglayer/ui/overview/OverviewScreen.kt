@@ -15,7 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier.modifier
+import androidx.compose.ui.Modifier.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,9 +78,9 @@ fun OverviewScreen(
                     VerticalSpacer(6)
                 }
                 KeyValueRow("Spent today", MoneyNormalizer.formatToman(snap.spentTodayToman))
-                if (snap.knownTotalBalanceToman != null) {
+                snap.knownTotalBalanceToman?.let { total ->
                     VerticalSpacer(6)
-                    KeyValueRow("Known total", MoneyNormalizer.formatToman(snap.knownTotalBalanceToman))
+                    KeyValueRow("Known total", MoneyNormalizer.formatToman(total))
                 }
             }
         }
