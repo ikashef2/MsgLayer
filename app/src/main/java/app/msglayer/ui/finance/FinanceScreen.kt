@@ -1,5 +1,6 @@
-import androidx.lifecycle.viewmodel.compose.viewModel
 package app.msglayer.ui.finance
+
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,7 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.modifier.Modifier
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.MoneyNormalizer
