@@ -1,21 +1,20 @@
 package app.msglayer.ui.message
 
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.MessageDetailViewModel
 import app.msglayer.ui.components.KeyValueRow
 import app.msglayer.ui.components.QuietPanel
+import app.msglayer.ui.components.ScreenHeader
 import app.msglayer.ui.components.SectionLabel
 import app.msglayer.ui.components.VerticalSpacer
 import app.msglayer.ui.theme.TextSecondary
@@ -31,15 +30,15 @@ fun MessageDetailScreen(
     val facts = vm.relatedFacts(messageId)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            TextButton(onClick = onBack) { Text("Back") }
-            Text(sender?.displayName ?: "Message", style = MaterialTheme.typography.displaySmall)
-            if (msg != null) {
-                Text(TimeFormat.relative(System.currentTimeMillis(), msg.timestamp), color = TextSecondary, style = MaterialTheme.typography.labelMedium)
-            }
+            ScreenHeader(
+                title = sender?.displayName ?: "Message",
+                subtitle = msg?.let { TimeFormat.relative(System.currentTimeMillis(), it.timestamp) },
+                onBack = onBack
+            )
         }
         item {
             SectionLabel("Original")
@@ -52,10 +51,15 @@ fun MessageDetailScreen(
                 SectionLabel("Organization")
                 QuietPanel {
                     KeyValueRow("Visibility", msg.visibility.name.lowercase())
-                    KeyValueRow("Lifecycle", msg.lifecycle.type.name.lowercase())
-                    val labels = msg.classification?.labels?.joinToString { "${it.label.name.lowercase()} ${(it.confidence * 100).toInt()}%" }.orEmpty()
                     VerticalSpacer(6)
-                    Text(labels, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                    KeyValueRow("Lifecycle", msg.lifecycle.type.name.lowercase())
+                    val labels = msg.classification?.labels
+                        ?.joinToString { "${it.label.name.lowercase()} ${(it.confidence * 100).toInt()}%" }
+                        .orEmpty()
+                    if (labels.isNotEmpty()) {
+                        VerticalSpacer(8)
+                        Text(labels, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                    }
                 }
             }
         }
@@ -67,7 +71,11 @@ fun MessageDetailScreen(
                         Text(fact.type.name, style = MaterialTheme.typography.labelMedium, color = TextSecondary)
                         Text(fact.displayValue, style = MaterialTheme.typography.titleLarge)
                         if (fact.supersededBy != null || !fact.isCurrent) {
-                            Text("Superseded — kept for history", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                "Superseded — kept for history",
+                                color = TextSecondary,
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
                 }

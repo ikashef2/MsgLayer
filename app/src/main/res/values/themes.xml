@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.MsgLayer" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#FF0B0C0E</item>
-        <item name="android:navigationBarColor">#FF0B0C0E</item>
-        <item name="android:windowBackground">#FF0B0C0E</item>
-        <item name="android:colorPrimary">#FFC8CBD0</item>
+    <style name="Theme.MsgLayer" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FFF5F6FA</item>
+        <item name="android:navigationBarColor">#FFFFFFFF</item>
+        <item name="android:windowBackground">#FFF5F6FA</item>
+        <item name="android:colorPrimary">#FF3482FF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

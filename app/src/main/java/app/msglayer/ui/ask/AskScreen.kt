@@ -1,7 +1,5 @@
 package app.msglayer.ui.ask
 
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -24,11 +24,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.AskViewModel
 import app.msglayer.ui.components.QuietPanel
+import app.msglayer.ui.components.ScreenHeader
 import app.msglayer.ui.components.SectionLabel
 import app.msglayer.ui.components.VerticalSpacer
+import app.msglayer.ui.theme.Accent
 import app.msglayer.ui.theme.TextSecondary
 import app.msglayer.ui.theme.Warning
 
@@ -47,25 +50,35 @@ fun AskScreen(
         "What is my latest Melli account balance?"
     )
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Ask My Messages", style = MaterialTheme.typography.displaySmall)
-        Text("Answers come from your indexed messages, with evidence.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-        VerticalSpacer(12)
+    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
+        ScreenHeader(
+            title = "Ask",
+            subtitle = "Local answers with evidence from your messages"
+        )
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Ask about balances, appointments, people…") },
-            singleLine = true
+            placeholder = { Text("Balances, appointments, people…") },
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp)
         )
-        VerticalSpacer(8)
-        Button(onClick = { vm.ask(query) }, modifier = Modifier.fillMaxWidth()) {
+        VerticalSpacer(10)
+        Button(
+            onClick = { vm.ask(query) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Accent)
+        ) {
             Text("Ask")
         }
-        VerticalSpacer(12)
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+        VerticalSpacer(14)
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
             if (answer == null) {
-                item { SectionLabel("Try") }
+                item { SectionLabel("Try asking") }
                 items(suggestions) { s ->
                     QuietPanel(onClick = { query = s; vm.ask(s) }) {
                         Text(s, style = MaterialTheme.typography.bodyLarge)
@@ -86,16 +99,25 @@ fun AskScreen(
                         }
                     }
                 }
-                item { SectionLabel("Source") }
+                item { SectionLabel("Sources") }
                 items(answer!!.evidence.messageIds) { id ->
                     val msg = vm.message(id) ?: return@items
                     QuietPanel {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(vm.senderName(msg.senderId), style = MaterialTheme.typography.titleMedium)
-                            Text(TimeFormat.relative(System.currentTimeMillis(), msg.timestamp), color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                TimeFormat.relative(System.currentTimeMillis(), msg.timestamp),
+                                color = TextSecondary,
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
-                        Text(msg.body.lines().take(3).joinToString("\n"), style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                        TextButton(onClick = { onOpenMessage(id) }) { Text("Open message") }
+                        VerticalSpacer(4)
+                        Text(
+                            msg.body.lines().take(3).joinToString("\n"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                        TextButton(onClick = { onOpenMessage(id) }) { Text("Open") }
                     }
                 }
             }

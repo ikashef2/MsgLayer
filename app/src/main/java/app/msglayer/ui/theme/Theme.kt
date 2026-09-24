@@ -1,9 +1,8 @@
 package app.msglayer.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -11,51 +10,106 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-val Bg = Color(0xFF0B0C0E)
-val Surface = Color(0xFF14161A)
-val Surface2 = Color(0xFF1B1E24)
-val Border = Color(0xFF2A2E36)
-val TextPrimary = Color(0xFFE8EAED)
-val TextSecondary = Color(0xFF9AA0A6)
-val Accent = Color(0xFF8FA8C4)
-val AccentMuted = Color(0xFF5E738C)
-val Positive = Color(0xFF8FBF9F)
-val Warning = Color(0xFFC4A574)
-val Danger = Color(0xFFC48787)
+/** HyperOS-inspired light palette — soft gray canvas, white cards, system blue. */
+val Bg = Color(0xFFF5F6FA)
+val Surface = Color(0xFFFFFFFF)
+val Surface2 = Color(0xFFEEF0F5)
+val Border = Color(0xFFE6E8EE)
+val Divider = Color(0xFFEBEDF2)
+val TextPrimary = Color(0xFF1A1A1A)
+val TextSecondary = Color(0xFF8A8F9A)
+val TextTertiary = Color(0xFFB0B4BE)
+val Accent = Color(0xFF3482FF)
+val AccentSoft = Color(0xFFD6E6FF)
+val AccentMuted = Color(0xFF5B8DEF)
+val Positive = Color(0xFF1DBF73)
+val Warning = Color(0xFFFF8F1F)
+val Danger = Color(0xFFFF4D4F)
 
-private val DarkColors = darkColorScheme(
+private val HyperColors = lightColorScheme(
     primary = Accent,
-    onPrimary = Bg,
+    onPrimary = Color.White,
     secondary = AccentMuted,
+    onSecondary = Color.White,
+    tertiary = Positive,
     background = Bg,
-    surface = Surface,
-    surfaceVariant = Surface2,
     onBackground = TextPrimary,
+    surface = Surface,
     onSurface = TextPrimary,
+    surfaceVariant = Surface2,
     onSurfaceVariant = TextSecondary,
     outline = Border,
-    error = Danger
+    outlineVariant = Divider,
+    error = Danger,
+    onError = Color.White,
+    inversePrimary = AccentSoft
 )
 
-private val AppTypography = Typography(
-    displaySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, letterSpacing = (-0.5).sp),
-    headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
-    titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 18.sp),
-    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 15.sp),
-    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 22.sp),
-    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp),
-    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 0.4.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 11.sp, letterSpacing = 0.3.sp)
+private val HyperType = Typography(
+    displaySmall = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp,
+        lineHeight = 38.sp,
+        letterSpacing = (-0.6).sp,
+        color = TextPrimary
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 30.sp,
+        letterSpacing = (-0.3).sp,
+        color = TextPrimary
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        color = TextPrimary
+    ),
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp,
+        lineHeight = 22.sp,
+        color = TextPrimary
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        color = TextPrimary
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        color = TextPrimary
+    ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 13.sp,
+        letterSpacing = 0.1.sp,
+        color = TextSecondary
+    ),
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        color = TextSecondary
+    )
 )
 
 @Composable
 fun MsgLayerTheme(content: @Composable () -> Unit) {
-    // Dark-mode first product identity
-    @Suppress("UNUSED_VARIABLE")
-    val ignoreSystem = isSystemInDarkTheme()
     MaterialTheme(
-        colorScheme = DarkColors,
-        typography = AppTypography,
+        colorScheme = HyperColors,
+        typography = HyperType,
         content = content
     )
 }

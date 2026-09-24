@@ -1,7 +1,5 @@
 package app.msglayer.ui.rules
 
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,17 +9,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.msglayer.ui.RulesViewModel
 import app.msglayer.ui.components.QuietPanel
+import app.msglayer.ui.components.ScreenHeader
 import app.msglayer.ui.components.SectionLabel
+import app.msglayer.ui.theme.Accent
 import app.msglayer.ui.theme.TextSecondary
 
 @Composable
@@ -32,23 +33,36 @@ fun RulesScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            TextButton(onClick = onBack) { Text("Back") }
-            Text("Organization rules", style = MaterialTheme.typography.displaySmall)
-            Text("Non-destructive only — never permanent delete.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            ScreenHeader(
+                title = "Rules",
+                subtitle = "Non-destructive — never permanent delete",
+                onBack = onBack
+            )
             SectionLabel("Active")
         }
         items(state.rules) { rule ->
             QuietPanel {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(rule.naturalLanguage, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    Switch(checked = rule.enabled, onCheckedChange = { vm.toggle(rule.id) })
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        rule.naturalLanguage,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = rule.enabled,
+                        onCheckedChange = { vm.toggle(rule.id) },
+                        colors = SwitchDefaults.colors(checkedTrackColor = Accent)
+                    )
                 }
-                Text(rule.conditionsSummary, style = MaterialTheme.typography.labelMedium, color = TextSecondary)
-                Text(rule.actions.joinToString { it.name.lowercase() }, style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                Text(rule.conditionsSummary, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

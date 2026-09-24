@@ -14,12 +14,15 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -37,8 +40,11 @@ import app.msglayer.ui.overview.OverviewScreen
 import app.msglayer.ui.rules.RulesScreen
 import app.msglayer.ui.search.SearchScreen
 import app.msglayer.ui.settings.SettingsScreen
+import app.msglayer.ui.theme.Accent
 import app.msglayer.ui.theme.Bg
 import app.msglayer.ui.theme.MsgLayerTheme
+import app.msglayer.ui.theme.Surface
+import app.msglayer.ui.theme.TextSecondary
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,7 +64,7 @@ private data class Tab(val dest: Dest, val label: String, val icon: ImageVector)
 fun MsgLayerRoot() {
     val nav = rememberNavController()
     val tabs = listOf(
-        Tab(Dest.Overview, "Overview", Icons.Outlined.Home),
+        Tab(Dest.Overview, "Home", Icons.Outlined.Home),
         Tab(Dest.Inbox, "Inbox", Icons.Outlined.Inbox),
         Tab(Dest.Finance, "Finance", Icons.Outlined.AccountBalanceWallet),
         Tab(Dest.Ask, "Ask", Icons.Outlined.ChatBubbleOutline),
@@ -72,7 +78,10 @@ fun MsgLayerRoot() {
         containerColor = Bg,
         bottomBar = {
             if (showBar) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = Surface,
+                    tonalElevation = 0.dp
+                ) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.dest.route,
@@ -84,7 +93,14 @@ fun MsgLayerRoot() {
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label) }
+                            label = { Text(tab.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Accent,
+                                selectedTextColor = Accent,
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary,
+                                indicatorColor = Color(0xFFD6E6FF)
+                            )
                         )
                     }
                 }
