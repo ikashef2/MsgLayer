@@ -18,7 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.modifier.Modifier
+import app.msglayer.ui.UiModifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -96,7 +96,7 @@ fun MsgLayerRoot() {
         NavHost(
             navController = nav,
             startDestination = Dest.Overview.route,
-            modifier = Modifier.padding(padding)
+            modifier = UiModifier.padding(padding)
         ) {
             composable(Dest.Overview.route) {
                 OverviewScreen(

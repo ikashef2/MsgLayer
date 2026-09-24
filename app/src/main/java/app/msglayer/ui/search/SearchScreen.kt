@@ -16,7 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.modifier.Modifier
+import app.msglayer.ui.UiModifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,13 +32,13 @@ fun SearchScreen(
 ) {
     var q by remember { mutableStateOf("") }
     val results by vm.results.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(UiModifier.fillMaxSize().padding(16.dp)) {
         Text("Search", style = MaterialTheme.typography.displaySmall)
         VerticalSpacer(8)
         OutlinedTextField(
             value = q,
             onValueChange = { q = it; vm.search(it) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = UiModifier.fillMaxWidth(),
             placeholder = { Text("sender, text, category…") },
             singleLine = true
         )
