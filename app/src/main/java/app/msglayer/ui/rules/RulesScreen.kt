@@ -15,7 +15,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.ui.RulesViewModel
 import app.msglayer.ui.components.QuietPanel
@@ -23,7 +22,7 @@ import app.msglayer.ui.components.SectionLabel
 import app.msglayer.ui.theme.TextSecondary
 
 @Composable
-fun RulesScreen(vm: RulesViewModel = hiltViewModel()) {
+fun RulesScreen(vm: RulesViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

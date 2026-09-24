@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.MessageDetailViewModel
 import app.msglayer.ui.components.KeyValueRow
@@ -21,7 +20,7 @@ import app.msglayer.ui.theme.TextSecondary
 @Composable
 fun MessageDetailScreen(
     messageId: String,
-    vm: MessageDetailViewModel = hiltViewModel()
+    vm: MessageDetailViewModel = viewModel()
 ) {
     val msg = vm.message(messageId)
     val sender = msg?.let { vm.sender(it.senderId) }

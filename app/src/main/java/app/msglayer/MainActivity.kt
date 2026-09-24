@@ -39,9 +39,7 @@ import app.msglayer.ui.search.SearchScreen
 import app.msglayer.ui.settings.SettingsScreen
 import app.msglayer.ui.theme.Bg
 import app.msglayer.ui.theme.MsgLayerTheme
-import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.AskViewModel
@@ -34,7 +33,7 @@ import app.msglayer.ui.theme.Warning
 @Composable
 fun AskScreen(
     onOpenMessage: (String) -> Unit,
-    vm: AskViewModel = hiltViewModel()
+    vm: AskViewModel = viewModel()
 ) {
     var query by remember { mutableStateOf("") }
     val answer by vm.answer.collectAsStateWithLifecycle()

@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.ActivityViewModel
@@ -22,7 +21,7 @@ import app.msglayer.ui.components.QuietPanel
 import app.msglayer.ui.theme.TextSecondary
 
 @Composable
-fun ActivityScreen(vm: ActivityViewModel = hiltViewModel()) {
+fun ActivityScreen(vm: ActivityViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

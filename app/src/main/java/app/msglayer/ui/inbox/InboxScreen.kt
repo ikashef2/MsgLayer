@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.data.repository.InboxFilter
@@ -30,7 +29,7 @@ import app.msglayer.ui.theme.TextSecondary
 @Composable
 fun InboxScreen(
     onOpenMessage: (String) -> Unit,
-    vm: InboxViewModel = hiltViewModel()
+    vm: InboxViewModel = viewModel()
 ) {
     val filter by vm.filterState.collectAsStateWithLifecycle()
     val stateTick by vm.messages.collectAsStateWithLifecycle()

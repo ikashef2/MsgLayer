@@ -6,11 +6,8 @@ import app.msglayer.domain.model.ExtractedEntity
 import app.msglayer.domain.model.Message
 import app.msglayer.domain.model.MessageClassification
 import app.msglayer.data.pipeline.LocalClassifier
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class LocalRetrievalAiProvider @Inject constructor(
+class LocalRetrievalAiProvider constructor(
     private val classifier: LocalClassifier,
     private val repository: OrganizerRepository
 ) : AiProvider {

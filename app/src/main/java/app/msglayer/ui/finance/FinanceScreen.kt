@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.MoneyNormalizer
 import app.msglayer.ui.FinanceViewModel
@@ -24,7 +23,7 @@ import app.msglayer.ui.theme.TextSecondary
 import app.msglayer.ui.theme.Warning
 
 @Composable
-fun FinanceScreen(vm: FinanceViewModel = hiltViewModel()) {
+fun FinanceScreen(vm: FinanceViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.MoneyNormalizer
 import app.msglayer.core.common.TimeFormat
@@ -35,7 +34,7 @@ fun OverviewScreen(
     onAsk: () -> Unit,
     onOpenMessage: (String) -> Unit,
     onOpenActivity: () -> Unit,
-    vm: OverviewViewModel = hiltViewModel()
+    vm: OverviewViewModel = viewModel()
 ) {
     val snap by vm.overview.collectAsStateWithLifecycle()
     LazyColumn(

@@ -16,11 +16,8 @@ import app.msglayer.domain.model.Sender
 import app.msglayer.domain.model.Transaction
 import app.msglayer.domain.model.TransactionType
 import app.msglayer.domain.model.VisibilityState
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class LocalClassifier @Inject constructor() {
+class LocalClassifier constructor() {
     fun classify(message: Message, sender: Sender?): MessageClassification {
         val body = PersianText.toEnglishDigits(message.body).lowercase()
         val scores = mutableListOf<LabelScore>()
@@ -94,8 +91,7 @@ class LocalClassifier @Inject constructor() {
     }
 }
 
-@Singleton
-class FinanceExtractor @Inject constructor() {
+class FinanceExtractor constructor() {
     fun extractTransactions(message: Message, accountId: String?): Transaction? {
         val body = message.body
         val money = MoneyNormalizer.parse(body) ?: return null

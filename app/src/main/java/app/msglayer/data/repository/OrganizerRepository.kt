@@ -30,8 +30,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import javax.inject.Inject
-import javax.inject.Singleton
 
 data class OrganizerState(
     val messages: List<Message> = emptyList(),
@@ -47,8 +45,7 @@ data class OrganizerState(
     val lastVisitAt: Long = System.currentTimeMillis() - 86_400_000
 )
 
-@Singleton
-class OrganizerRepository @Inject constructor(
+class OrganizerRepository constructor(
     private val messageSource: MockMessageSource,
     private val classifier: LocalClassifier,
     private val financeExtractor: FinanceExtractor

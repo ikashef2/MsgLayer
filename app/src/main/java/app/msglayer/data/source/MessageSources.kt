@@ -7,11 +7,8 @@ import app.msglayer.domain.source.MessageSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class MockMessageSource @Inject constructor() : MessageSource {
+class MockMessageSource constructor() : MessageSource {
     override val id: String = "mock-sms"
     override val displayName: String = "Mock SMS"
     override val capabilities: SourceCapabilities = SourceCapabilities(

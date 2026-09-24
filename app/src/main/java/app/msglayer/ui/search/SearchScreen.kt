@@ -18,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.ui.SearchViewModel
 import app.msglayer.ui.components.QuietPanel
@@ -28,7 +27,7 @@ import app.msglayer.ui.theme.TextSecondary
 @Composable
 fun SearchScreen(
     onOpenMessage: (String) -> Unit,
-    vm: SearchViewModel = hiltViewModel()
+    vm: SearchViewModel = viewModel()
 ) {
     var q by remember { mutableStateOf("") }
     val results by vm.results.collectAsStateWithLifecycle()
