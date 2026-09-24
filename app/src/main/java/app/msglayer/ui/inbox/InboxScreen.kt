@@ -16,7 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.modifier.Modifier
+import androidx.compose.ui.modifier.Modifier as Mod
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.TimeFormat
@@ -35,9 +35,9 @@ fun InboxScreen(
     val stateTick by vm.messages.collectAsStateWithLifecycle()
     val list = remember(filter, stateTick) { vm.refreshMessages() }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    Column(Mod.fillMaxSize().padding(horizontal = 16.dp)) {
         SectionLabel("Inbox")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Mod.padding(bottom = 12.dp)) {
             InboxFilter.entries.forEach { f ->
                 FilterChip(
                     selected = filter == f,
@@ -52,7 +52,7 @@ fun InboxScreen(
         ) {
             items(list, key = { it.id }) { msg ->
                 QuietPanel(onClick = { onOpenMessage(msg.id) }) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(Mod.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(vm.senderName(msg.senderId), style = MaterialTheme.typography.titleMedium)
                         Text(
                             TimeFormat.relative(System.currentTimeMillis(), msg.timestamp),

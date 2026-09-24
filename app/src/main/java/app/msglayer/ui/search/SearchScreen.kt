@@ -16,7 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.modifier.Modifier
+import androidx.compose.ui.modifier.Modifier as Mod
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.ui.SearchViewModel
@@ -31,13 +31,13 @@ fun SearchScreen(
 ) {
     var q by remember { mutableStateOf("") }
     val results by vm.results.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Mod.fillMaxSize().padding(16.dp)) {
         Text("Search", style = MaterialTheme.typography.displaySmall)
         VerticalSpacer(8)
         OutlinedTextField(
             value = q,
             onValueChange = { q = it; vm.search(it) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Mod.fillMaxWidth(),
             placeholder = { Text("sender, text, category…") },
             singleLine = true
         )

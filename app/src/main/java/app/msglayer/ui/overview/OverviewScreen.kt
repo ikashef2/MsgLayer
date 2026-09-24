@@ -15,7 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.modifier.Modifier
+import androidx.compose.ui.modifier.Modifier as Mod
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.MoneyNormalizer
@@ -38,7 +38,7 @@ fun OverviewScreen(
 ) {
     val snap by vm.overview.collectAsStateWithLifecycle()
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Mod.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -57,7 +57,7 @@ fun OverviewScreen(
             QuietPanel {
                 snap.attentionItems.take(3).forEachIndexed { i, item ->
                     if (i > 0) VerticalSpacer(10)
-                    Column(Modifier.fillMaxWidth()) {
+                    Column(Mod.fillMaxWidth()) {
                         Text(item.title, style = MaterialTheme.typography.titleMedium)
                         Text(item.subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                         Text(TimeFormat.relative(System.currentTimeMillis(), item.timestamp), style = MaterialTheme.typography.labelMedium, color = TextSecondary)
@@ -110,8 +110,8 @@ fun OverviewScreen(
             SectionLabel("Cleaned up")
             QuietPanel {
                 snap.cleanedUp.forEach {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
+                    Row(Mod.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Mod.weight(1f)) {
                             Text("${it.count} ${it.title}", style = MaterialTheme.typography.titleMedium)
                             Text(it.reason, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                         }
@@ -129,7 +129,7 @@ fun OverviewScreen(
                 Text("Ask anything about your messages", style = MaterialTheme.typography.titleMedium, color = Accent)
                 Text("Retrieval over your indexed history — with sources", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            Row(Mod.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onOpenActivity) { Text("Activity log") }
             }
         }
