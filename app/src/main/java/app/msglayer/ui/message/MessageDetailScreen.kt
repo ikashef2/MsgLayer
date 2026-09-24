@@ -1,3 +1,4 @@
+import androidx.lifecycle.viewmodel.compose.viewModel
 package app.msglayer.ui.message
 
 import androidx.compose.foundation.layout.Arrangement
@@ -7,7 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.modifier.Modifier as Mod
+import androidx.compose.ui.modifier.`Modifier` as Mod
 import androidx.compose.ui.unit.dp
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.MessageDetailViewModel

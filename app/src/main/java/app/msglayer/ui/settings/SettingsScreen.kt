@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.modifier.Modifier as Mod
+import androidx.compose.ui.modifier.`Modifier` as Mod
 import androidx.compose.ui.unit.dp
 import app.msglayer.ui.components.QuietPanel
 import app.msglayer.ui.components.SectionLabel

@@ -1,3 +1,4 @@
+import androidx.lifecycle.viewmodel.compose.viewModel
 package app.msglayer.ui.activity
 
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.modifier.Modifier as Mod
+import androidx.compose.ui.modifier.`Modifier` as Mod
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.TimeFormat
