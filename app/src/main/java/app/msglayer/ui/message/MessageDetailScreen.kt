@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.modifier.`Modifier` as Mod
+import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.ui.MessageDetailViewModel
@@ -27,7 +27,7 @@ fun MessageDetailScreen(
     val sender = msg?.let { vm.sender(it.senderId) }
     val facts = vm.relatedFacts(messageId)
     LazyColumn(
-        modifier = Mod.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

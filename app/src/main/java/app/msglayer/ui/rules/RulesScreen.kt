@@ -14,7 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.modifier.`Modifier` as Mod
+import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.ui.RulesViewModel
@@ -26,7 +26,7 @@ import app.msglayer.ui.theme.TextSecondary
 fun RulesScreen(vm: RulesViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
-        modifier = Mod.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -37,8 +37,8 @@ fun RulesScreen(vm: RulesViewModel = viewModel()) {
         }
         items(state.rules) { rule ->
             QuietPanel {
-                Row(Mod.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(rule.naturalLanguage, style = MaterialTheme.typography.bodyLarge, modifier = Mod.weight(1f))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(rule.naturalLanguage, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     Switch(checked = rule.enabled, onCheckedChange = { vm.toggle(rule.id) })
                 }
                 Text(rule.conditionsSummary, style = MaterialTheme.typography.labelMedium, color = TextSecondary)

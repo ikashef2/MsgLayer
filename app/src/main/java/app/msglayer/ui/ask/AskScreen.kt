@@ -20,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.modifier.`Modifier` as Mod
+import androidx.compose.ui.modifier.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.msglayer.core.common.TimeFormat
@@ -46,19 +46,19 @@ fun AskScreen(
         "What is my latest Melli account balance?"
     )
 
-    Column(Mod.fillMaxSize().padding(16.dp)) {
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Ask My Messages", style = MaterialTheme.typography.displaySmall)
         Text("Answers come from your indexed messages, with evidence.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
         VerticalSpacer(12)
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            modifier = Mod.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Ask about balances, appointments, people…") },
             singleLine = true
         )
         VerticalSpacer(8)
-        Button(onClick = { vm.ask(query) }, modifier = Mod.fillMaxWidth()) {
+        Button(onClick = { vm.ask(query) }, modifier = Modifier.fillMaxWidth()) {
             Text("Ask")
         }
         VerticalSpacer(12)
@@ -89,7 +89,7 @@ fun AskScreen(
                 items(answer!!.evidence.messageIds) { id ->
                     val msg = vm.message(id) ?: return@items
                     QuietPanel {
-                        Row(Mod.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(vm.senderName(msg.senderId), style = MaterialTheme.typography.titleMedium)
                             Text(TimeFormat.relative(System.currentTimeMillis(), msg.timestamp), color = TextSecondary, style = MaterialTheme.typography.labelMedium)
                         }
