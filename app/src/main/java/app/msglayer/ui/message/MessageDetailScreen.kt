@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import app.msglayer.ui.theme.TextSecondary
 @Composable
 fun MessageDetailScreen(
     messageId: String,
+    onBack: () -> Unit = {},
     vm: MessageDetailViewModel = viewModel()
 ) {
     val msg = vm.message(messageId)
@@ -33,6 +35,7 @@ fun MessageDetailScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
+            TextButton(onClick = onBack) { Text("Back") }
             Text(sender?.displayName ?: "Message", style = MaterialTheme.typography.displaySmall)
             if (msg != null) {
                 Text(TimeFormat.relative(System.currentTimeMillis(), msg.timestamp), color = TextSecondary, style = MaterialTheme.typography.labelMedium)

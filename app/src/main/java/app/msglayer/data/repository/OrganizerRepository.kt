@@ -1,11 +1,11 @@
 package app.msglayer.data.repository
 
+import app.msglayer.SourceMode
 import app.msglayer.core.common.MoneyNormalizer
 import app.msglayer.core.common.TimeFormat
-import app.msglayer.data.mock.MockSmsDataset
+import app.msglayer.data.pipeline.BankDirectory
 import app.msglayer.data.pipeline.FinanceExtractor
 import app.msglayer.data.pipeline.LocalClassifier
-import app.msglayer.data.source.MockMessageSource
 import app.msglayer.domain.model.AskAnswer
 import app.msglayer.domain.model.AiEvidence
 import app.msglayer.domain.model.AttentionItem
@@ -42,26 +42,40 @@ data class OrganizerState(
     val groups: List<MessageGroupSummary> = emptyList(),
     val actions: List<OrganizationAction> = emptyList(),
     val rules: List<AutomationRule> = emptyList(),
+    val sourceMode: SourceMode = SourceMode.MOCK,
     val lastVisitAt: Long = System.currentTimeMillis() - 86_400_000
 )
 
-class OrganizerRepository constructor(
-    private val messageSource: MockMessageSource,
+class OrganizerRepository(
     private val classifier: LocalClassifier,
     private val financeExtractor: FinanceExtractor
 ) {
     private val _state = MutableStateFlow(OrganizerState())
     val state: StateFlow<OrganizerState> = _state.asStateFlow()
 
-    init {
-        bootstrap()
-    }
+    fun ingest(
+        messages: List<Message>,
+        sendersSeed: List<Sender> = emptyList(),
+        sourceMode: SourceMode = SourceMode.MOCK,
+        now: Long = System.currentTimeMillis()
+    ) {
+        val senders = linkedMapOf<String, Sender>()
+        sendersSeed.forEach { senders[it.id] = it }
+        messages.forEach { msg ->
+            if (msg.senderId !in senders) {
+                val address = msg.senderId.removePrefix("sms:")
+                senders[msg.senderId] = BankDirectory.senderFromAddress(address, msg.body)
+            } else {
+                val existing = senders.getValue(msg.senderId)
+                if (!existing.isKnownBank && BankDirectory.isLikelyBank(existing.address, msg.body)) {
+                    senders[msg.senderId] = existing.copy(isKnownBank = true)
+                }
+            }
+        }
 
-    fun bootstrap(now: Long = System.currentTimeMillis()) {
-        val senders = MockSmsDataset.senders().associateBy { it.id }
-        val raw = messageSource.getMessagesBlocking(now)
-        val enriched = raw.map { msg ->
-            val c = classifier.classify(msg, senders[msg.senderId])
+        val enriched = messages.map { msg ->
+            val sender = senders[msg.senderId]
+            val c = classifier.classify(msg, sender)
             val life = classifier.lifecycle(msg, c)
             val vis = classifier.visibility(c, life)
             val groupKey = when {
@@ -73,38 +87,51 @@ class OrganizerRepository constructor(
             msg.copy(classification = c, lifecycle = life, visibility = vis, groupKey = groupKey)
         }
 
-        val accountDefs = listOf(
-            BankAccount("acc-blu", "Blu", cardHint = "*Blu"),
-            BankAccount("acc-melli", "Melli", accountHint = "*4567"),
-            BankAccount("acc-mellat", "Mellat", cardHint = "*8899")
-        )
-        fun accountFor(senderId: String) = when (senderId) {
-            "s-blu" -> "acc-blu"
-            "s-melli" -> "acc-melli"
-            "s-mellat" -> "acc-mellat"
-            else -> null
-        }
-
+        val accountMap = linkedMapOf<String, BankAccount>()
         val balanceFacts = mutableListOf<Fact>()
         val txs = mutableListOf<Transaction>()
+
         enriched.forEach { msg ->
-            val accId = accountFor(msg.senderId)
-            financeExtractor.extractBalanceFact(msg, accId ?: return@forEach)?.let { balanceFacts += it }
-            financeExtractor.extractTransactions(msg, accId)?.let { txs += it }
+            val address = senders[msg.senderId]?.address ?: msg.senderId.removePrefix("sms:")
+            val bank = BankDirectory.accountFor(address, msg.body)
+            val accId = when {
+                bank != null -> {
+                    accountMap.putIfAbsent(
+                        bank.accountId,
+                        BankAccount(bank.accountId, bank.bankName, accountHint = address.takeLast(6))
+                    )
+                    bank.accountId
+                }
+                BankDirectory.isLikelyBank(address, msg.body) || senders[msg.senderId]?.isKnownBank == true -> {
+                    val fallbackId = "acc-${address.hashCode().toUInt()}"
+                    val name = senders[msg.senderId]?.displayName ?: address
+                    accountMap.putIfAbsent(fallbackId, BankAccount(fallbackId, name, accountHint = address.takeLast(6)))
+                    fallbackId
+                }
+                else -> null
+            }
+            if (accId != null) {
+                financeExtractor.extractBalanceFact(msg, accId)?.let { balanceFacts += it }
+                financeExtractor.extractTransactions(msg, accId)?.let { txs += it }
+            }
         }
-        // Supersede older balances per account
+
         val currentFacts = balanceFacts
             .groupBy { it.entityId }
             .flatMap { (_, list) ->
                 val sorted = list.sortedBy { it.validFrom }
                 sorted.mapIndexed { index, fact ->
                     if (index < sorted.lastIndex) {
-                        fact.copy(isCurrent = false, supersededBy = sorted[index + 1].id, validUntil = sorted[index + 1].validFrom)
+                        fact.copy(
+                            isCurrent = false,
+                            supersededBy = sorted[index + 1].id,
+                            validUntil = sorted[index + 1].validFrom
+                        )
                     } else fact
                 }
             }
 
-        val accounts = accountDefs.map { acc ->
+        val accounts = accountMap.values.map { acc ->
             val latest = currentFacts.filter { it.entityId == acc.id && it.isCurrent }.maxByOrNull { it.validFrom }
             acc.copy(
                 lastKnownBalanceToman = latest?.normalizedValue?.toLongOrNull(),
@@ -112,56 +139,27 @@ class OrganizerRepository constructor(
                 balanceSourceMessageId = latest?.sourceMessageIds?.firstOrNull(),
                 balanceConfidence = latest?.confidence ?: 0f
             )
-        }
+        }.sortedByDescending { it.balanceUpdatedAt ?: 0L }
 
-        val appointmentFacts = enriched.filter { it.id == "m-dental" }.map {
-            Fact(
-                id = "fact-appt-dental",
-                type = FactType.APPOINTMENT_TIME,
-                value = "Thursday, Sep 24 17:30",
-                normalizedValue = "2026-09-24T17:30",
-                displayValue = "Thu Sep 24, 17:30",
-                validFrom = it.timestamp,
-                confidence = 0.9f,
-                sourceMessageIds = listOf(it.id)
-            )
-        }
-        val meetingFacts = listOf(
-            Fact(
-                id = "fact-meet-old",
-                type = FactType.MEETING_TIME,
-                entityId = "meet-ima",
-                value = "4:00 PM",
-                normalizedValue = "16:00",
-                validFrom = enriched.first { it.id == "m-meet-1" }.timestamp,
-                validUntil = enriched.first { it.id == "m-meet-2" }.timestamp,
-                supersededBy = "fact-meet-new",
-                confidence = 0.85f,
-                sourceMessageIds = listOf("m-meet-1"),
-                isCurrent = false
-            ),
-            Fact(
-                id = "fact-meet-new",
-                type = FactType.MEETING_TIME,
-                entityId = "meet-ima",
-                value = "5:30 PM",
-                normalizedValue = "17:30",
-                displayValue = "5:30 PM",
-                validFrom = enriched.first { it.id == "m-meet-2" }.timestamp,
-                confidence = 0.9f,
-                sourceMessageIds = listOf("m-meet-2"),
-                isCurrent = true
-            )
-        )
+        val appointmentFacts = enriched
+            .filter { msg ->
+                msg.classification?.labels?.any { it.label == MessageLabel.APPOINTMENTS } == true
+            }
+            .take(5)
+            .map { msg ->
+                Fact(
+                    id = "fact-appt-${msg.id}",
+                    type = FactType.APPOINTMENT_TIME,
+                    value = msg.body.lines().first().take(80),
+                    displayValue = msg.body.lines().first().take(80),
+                    validFrom = msg.timestamp,
+                    confidence = 0.7f,
+                    sourceMessageIds = listOf(msg.id),
+                    freshnessTimestamp = msg.timestamp
+                )
+            }
 
-        val attention = listOf(
-            AttentionItem("att-ima", AttentionKind.UNANSWERED_QUESTION, "Ima", "\"Are we still going Friday?\"", "m-ima", enriched.first { it.id == "m-ima" }.timestamp, 3),
-            AttentionItem("att-reza", AttentionKind.REQUESTED_FILE, "Reza", "\"Can you send the invoice?\"", "m-reza", enriched.first { it.id == "m-reza" }.timestamp, 2),
-            AttentionItem("att-bill", AttentionKind.UNPAID_BILL, "Electricity Bill", "Due tomorrow", "m-bill", enriched.first { it.id == "m-bill" }.timestamp, 3),
-            AttentionItem("att-fail", AttentionKind.FAILED_TRANSACTION, "Bank Mellat", "Payment failed", "m-mellat-fail", enriched.first { it.id == "m-mellat-fail" }.timestamp, 3),
-            AttentionItem("att-dental", AttentionKind.APPOINTMENT_SOON, "Dentist", "Tomorrow 17:30", "m-dental", enriched.first { it.id == "m-dental" }.timestamp, 2)
-        )
-
+        val attention = buildAttention(enriched, senders)
         val otpIds = enriched.filter { it.groupKey == "otp" }.map { it.id }
         val promoIds = enriched.filter { it.groupKey == "commercial" }.map { it.id }
         val spamIds = enriched.filter { it.groupKey == "spam" }.map { it.id }
@@ -171,65 +169,121 @@ class OrganizerRepository constructor(
             if (spamIds.isNotEmpty()) MessageGroupSummary("spam", "Probable spam", spamIds.size, "Hidden from Primary Inbox", spamIds, VisibilityState.HIDDEN) else null
         )
 
-        val actions = listOf(
-            OrganizationAction("act-1", OrganizationActionType.GROUPED, "Grouped ${promoIds.size} promotional SMS", now - 40 * 60_000, promoIds),
-            OrganizationAction("act-2", OrganizationActionType.COLLAPSED, "Collapsed ${otpIds.size} OTP messages", now - 90 * 60_000, otpIds),
-            OrganizationAction("act-3", OrganizationActionType.LABELED, "Marked Bank Mellat as Finance", now - 86_400_000, listOf("m-mellat-new", "m-mellat-fail"), undoable = true),
-            OrganizationAction("act-4", OrganizationActionType.HIDDEN, "Hidden probable spam", now - 86_400_000, spamIds)
-        )
+        val actions = buildList {
+            if (promoIds.isNotEmpty()) add(OrganizationAction("act-promo", OrganizationActionType.GROUPED, "Grouped ${promoIds.size} promotional SMS", now, promoIds))
+            if (otpIds.isNotEmpty()) add(OrganizationAction("act-otp", OrganizationActionType.COLLAPSED, "Collapsed ${otpIds.size} OTP messages", now, otpIds))
+            if (spamIds.isNotEmpty()) add(OrganizationAction("act-spam", OrganizationActionType.HIDDEN, "Hidden probable spam", now, spamIds))
+            if (accounts.isNotEmpty()) add(OrganizationAction("act-fin", OrganizationActionType.LABELED, "Extracted finance from ${accounts.size} account(s)", now, accounts.mapNotNull { it.balanceSourceMessageId }, undoable = false))
+        }
 
         val rules = listOf(
-            AutomationRule("rule-1", "Always hide Irancell promotions.", "sender=Irancell + commercial", listOf(RuleActionType.HIDE, RuleActionType.GROUP), true, now - 7 * 86_400_000),
-            AutomationRule("rule-2", "Never hide messages from Bank Melli.", "sender=Bank Melli", listOf(RuleActionType.SHOW, RuleActionType.MARK_IMPORTANT), true, now - 5 * 86_400_000),
-            AutomationRule("rule-3", "Hide expired OTPs after 15 minutes.", "label=OTP + expired", listOf(RuleActionType.HIDE), true, now - 3 * 86_400_000),
-            AutomationRule("rule-4", "Anything from EPFund is Work.", "sender=EPFund", listOf(RuleActionType.LABEL), true, now - 2 * 86_400_000)
+            AutomationRule("rule-1", "Hide commercial / promo SMS from Primary.", "label=COMMERCIAL", listOf(RuleActionType.HIDE, RuleActionType.GROUP), true, now),
+            AutomationRule("rule-2", "Never auto-hide known bank senders.", "isKnownBank", listOf(RuleActionType.SHOW, RuleActionType.MARK_IMPORTANT), true, now),
+            AutomationRule("rule-3", "Collapse expired OTPs after 15 minutes.", "label=OTP + expired", listOf(RuleActionType.HIDE), true, now)
         )
 
-        val bluPrev = 2_220_000L
-        val bluNow = accounts.firstOrNull { it.id == "acc-blu" }?.lastKnownBalanceToman
-        val changes = buildList {
-            if (bluNow != null) add(ChangeEvent("ch-blu", "Blu balance decreased by ${MoneyNormalizer.formatToman(bluPrev - bluNow)}", now - 12 * 60_000, listOf("m-blu-new"), "finance"))
-            add(ChangeEvent("ch-pkg", "Your package is out for delivery", now - 60 * 60_000, listOf("m-digi-2"), "orders"))
-            add(ChangeEvent("ch-bill", "Your internet bill was issued", now - 20 * 60 * 60_000, listOf("m-bill"), "bills"))
-            add(ChangeEvent("ch-ali", "Ali sent a new card number", now - 7 * 60 * 60_000, listOf("m-ali"), "people"))
-            add(ChangeEvent("ch-otp", "${otpIds.size} OTP messages expired", now - 3 * 60 * 60_000, otpIds, "otp"))
-            add(ChangeEvent("ch-promo", "${promoIds.size} promotional messages were grouped", now - 2 * 60 * 60_000, promoIds, "commercial"))
-            add(ChangeEvent("ch-ima", "Ima asked a question you have not answered", now - 3 * 60 * 60_000, listOf("m-ima"), "people"))
-        }
+        val changes = buildChanges(enriched, accounts, txs, otpIds, promoIds, now)
 
         _state.value = OrganizerState(
             messages = enriched.sortedByDescending { it.timestamp },
             senders = senders,
             accounts = accounts,
             transactions = txs.sortedByDescending { it.timestamp },
-            facts = currentFacts + appointmentFacts + meetingFacts,
-            attention = attention.sortedByDescending { it.urgency },
+            facts = currentFacts + appointmentFacts,
+            attention = attention,
             changes = changes,
             groups = groups,
             actions = actions,
             rules = rules,
+            sourceMode = sourceMode,
             lastVisitAt = now - 86_400_000
         )
     }
 
+    private fun buildAttention(enriched: List<Message>, senders: Map<String, Sender>): List<AttentionItem> {
+        val out = mutableListOf<AttentionItem>()
+        enriched.take(200).forEach { msg ->
+            val labels = msg.classification?.labels?.map { it.label }.orEmpty().toSet()
+            val senderName = senders[msg.senderId]?.displayName ?: msg.senderId
+            val preview = msg.body.lines().firstOrNull()?.take(72).orEmpty()
+            when {
+                MessageLabel.BILLS in labels -> out += AttentionItem(
+                    "att-bill-${msg.id}", AttentionKind.UNPAID_BILL, senderName, preview, msg.id, msg.timestamp, 3
+                )
+                msg.body.contains("ناموفق") || msg.body.contains("failed", true) -> out += AttentionItem(
+                    "att-fail-${msg.id}", AttentionKind.FAILED_TRANSACTION, senderName, preview, msg.id, msg.timestamp, 3
+                )
+                MessageLabel.APPOINTMENTS in labels -> out += AttentionItem(
+                    "att-appt-${msg.id}", AttentionKind.APPOINTMENT_SOON, senderName, preview, msg.id, msg.timestamp, 2
+                )
+                !msg.isOutgoing && preview.contains("?") && MessageLabel.COMMERCIAL !in labels && MessageLabel.OTP !in labels ->
+                    out += AttentionItem(
+                        "att-q-${msg.id}", AttentionKind.UNANSWERED_QUESTION, senderName, preview, msg.id, msg.timestamp, 2
+                    )
+                preview.contains("invoice", true) || preview.contains("فایل") || preview.contains("بفرست") ->
+                    out += AttentionItem(
+                        "att-file-${msg.id}", AttentionKind.REQUESTED_FILE, senderName, preview, msg.id, msg.timestamp, 2
+                    )
+            }
+        }
+        return out.distinctBy { it.messageId }.sortedByDescending { it.urgency }.take(12)
+    }
+
+    private fun buildChanges(
+        enriched: List<Message>,
+        accounts: List<BankAccount>,
+        txs: List<Transaction>,
+        otpIds: List<String>,
+        promoIds: List<String>,
+        now: Long
+    ): List<ChangeEvent> {
+        val recent = enriched.filter { it.timestamp >= now - 48 * 3_600_000L }
+        return buildList {
+            accounts.filter { it.balanceUpdatedAt != null && it.balanceUpdatedAt!! >= now - 48 * 3_600_000L }
+                .forEach { acc ->
+                    add(
+                        ChangeEvent(
+                            "ch-bal-${acc.id}",
+                            "${acc.bankName} balance updated to ${acc.lastKnownBalanceToman?.let { MoneyNormalizer.formatToman(it) } ?: "—"}",
+                            acc.balanceUpdatedAt ?: now,
+                            listOfNotNull(acc.balanceSourceMessageId),
+                            "finance"
+                        )
+                    )
+                }
+            txs.take(5).forEach { tx ->
+                val amt = tx.amount.amountToman?.let { MoneyNormalizer.formatToman(it) } ?: tx.amount.originalText
+                add(ChangeEvent("ch-tx-${tx.id}", "${tx.type.name.lowercase()} $amt${tx.merchant?.let { " · $it" } ?: ""}", tx.timestamp, listOf(tx.sourceMessageId), "finance"))
+            }
+            recent.filter { it.classification?.primaryLabel == MessageLabel.DELIVERIES || it.classification?.primaryLabel == MessageLabel.ORDERS }
+                .take(3)
+                .forEach { msg ->
+                    add(ChangeEvent("ch-ord-${msg.id}", msg.body.lines().first().take(64), msg.timestamp, listOf(msg.id), "orders"))
+                }
+            if (otpIds.isNotEmpty()) add(ChangeEvent("ch-otp", "${otpIds.size} OTP messages collapsed", now, otpIds.take(5), "otp"))
+            if (promoIds.isNotEmpty()) add(ChangeEvent("ch-promo", "${promoIds.size} promotional messages grouped", now, promoIds.take(5), "commercial"))
+        }.sortedByDescending { it.timestamp }.take(12)
+    }
+
     fun overview(now: Long = System.currentTimeMillis()): OverviewSnapshot {
         val s = _state.value
+        val dayStart = now - (now % 86_400_000L)
         val spentToday = s.transactions
-            .filter { it.type == TransactionType.EXPENSE && it.timestamp >= now - ((now / 86_400_000) * 86_400_000) }
+            .filter { it.type == TransactionType.EXPENSE && it.timestamp >= dayStart }
             .mapNotNull { it.amount.amountToman }
             .sum()
-            .let {
-                // Seed a coherent spent-today from Blu debit if parsing sparse
-                s.transactions.firstOrNull { it.sourceMessageId == "m-blu-new" }?.amount?.amountToman ?: 420_000L
-            }
         val knownTotal = s.accounts.mapNotNull { it.lastKnownBalanceToman }.takeIf { it.isNotEmpty() }?.sum()
+        val ordersToday = s.messages.count { msg ->
+            msg.timestamp >= dayStart &&
+                (msg.classification?.labels?.any { it.label == MessageLabel.DELIVERIES || it.label == MessageLabel.ORDERS } == true)
+        }
         return OverviewSnapshot(
             greeting = TimeFormat.greeting(now),
             attentionCount = s.attention.size,
             attentionItems = s.attention,
             accounts = s.accounts,
             spentTodayToman = spentToday,
-            ordersArrivingToday = s.messages.count { it.id == "m-digi-2" },
+            ordersArrivingToday = ordersToday,
             changeEvents = s.changes,
             cleanedUp = s.groups,
             knownTotalBalanceToman = knownTotal
@@ -263,84 +317,63 @@ class OrganizerRepository constructor(
         val s = _state.value
         val q = question.lowercase()
         return when {
-            q.contains("how much money") || q.contains("balance") || q.contains("\u0645\u0627\u0646\u062F\u0647") -> {
-                val lines = s.accounts.map { acc ->
-                    val bal = acc.lastKnownBalanceToman?.let { MoneyNormalizer.formatToman(it) } ?: "unknown"
-                    val age = acc.balanceUpdatedAt?.let { TimeFormat.relative(System.currentTimeMillis(), it) } ?: "n/a"
-                    "${acc.bankName}: $bal (last known, $age)"
+            q.contains("how much money") || q.contains("balance") || q.contains("مانده") || q.contains("پول") -> {
+                if (s.accounts.isEmpty()) {
+                    AskAnswer(
+                        question = question,
+                        answerText = "No bank balances extracted yet.",
+                        structuredLines = listOf("Sync Device SMS in Settings, or stay on Mock SMS for demo data."),
+                        evidence = AiEvidence(emptyList()),
+                        freshnessNote = "Balances only appear when banking SMS is present and parseable."
+                    )
+                } else {
+                    val lines = s.accounts.map { acc ->
+                        val bal = acc.lastKnownBalanceToman?.let { MoneyNormalizer.formatToman(it) } ?: "unknown"
+                        val age = acc.balanceUpdatedAt?.let { TimeFormat.relative(System.currentTimeMillis(), it) } ?: "n/a"
+                        "${acc.bankName}: $bal (last known, $age)"
+                    }
+                    val total = s.accounts.mapNotNull { it.lastKnownBalanceToman }.sum()
+                    AskAnswer(
+                        question = question,
+                        answerText = "Your latest known balances from SMS",
+                        structuredLines = lines + "Known total: ${MoneyNormalizer.formatToman(total)}",
+                        evidence = AiEvidence(s.accounts.mapNotNull { it.balanceSourceMessageId }),
+                        freshnessNote = "Last known from messages — not live bank data."
+                    )
                 }
-                val total = s.accounts.mapNotNull { it.lastKnownBalanceToman }.sum()
-                AskAnswer(
-                    question = question,
-                    answerText = "Your latest known balances",
-                    structuredLines = lines + "Known total: ${MoneyNormalizer.formatToman(total)}",
-                    evidence = AiEvidence(s.accounts.mapNotNull { it.balanceSourceMessageId }),
-                    freshnessNote = "These are last known balances from SMS, not live bank data."
-                )
             }
-            q.contains("spend") || q.contains("spent") -> {
-                val snapp = s.transactions.filter { it.merchant.equals("Snapp", true) || it.sourceMessageId == "m-snapp" || it.sourceMessageId == "m-blu-new" }
-                AskAnswer(
-                    question = question,
-                    answerText = "Spending inferred from recent banking SMS",
-                    structuredLines = listOf(
-                        "Today (Blu / Snapp): ${MoneyNormalizer.formatToman(420_000)}",
-                        "Recent Snapp payment: ${MoneyNormalizer.formatToman(120_000)}"
-                    ),
-                    evidence = AiEvidence(snapp.map { it.sourceMessageId }.ifEmpty { listOf("m-blu-new", "m-snapp") })
-                )
+            q.contains("spend") || q.contains("spent") || q.contains("خرج") -> {
+                val expenses = s.transactions.filter { it.type == TransactionType.EXPENSE }.take(8)
+                if (expenses.isEmpty()) {
+                    AskAnswer(
+                        question = question,
+                        answerText = "No expense transactions extracted yet.",
+                        structuredLines = listOf("Bank debit SMS will appear here after sync."),
+                        evidence = AiEvidence(emptyList())
+                    )
+                } else {
+                    AskAnswer(
+                        question = question,
+                        answerText = "Recent spending from banking SMS",
+                        structuredLines = expenses.map { tx ->
+                            val amt = tx.amount.amountToman?.let { MoneyNormalizer.formatToman(it) } ?: tx.amount.originalText
+                            listOfNotNull(amt, tx.merchant, TimeFormat.relative(System.currentTimeMillis(), tx.timestamp)).joinToString(" · ")
+                        },
+                        evidence = AiEvidence(expenses.map { it.sourceMessageId })
+                    )
+                }
             }
-            q.contains("dentist") || q.contains("appointment") -> AskAnswer(
-                question = question,
-                answerText = "Your dentist appointment appears to be:",
-                structuredLines = listOf("Thursday, Sep 24", "17:30"),
-                evidence = AiEvidence(listOf("m-dental"))
-            )
-            q.contains("address") || q.contains("reza") && q.contains("address") -> AskAnswer(
-                question = question,
-                answerText = "Address Reza sent:",
-                structuredLines = listOf("Vanak Sq, No. 12, Unit 4"),
-                evidence = AiEvidence(listOf("m-addr"))
-            )
-            q.contains("figma") -> AskAnswer(
-                question = question,
-                answerText = "Found a Figma link:",
-                structuredLines = listOf("https://figma.com/file/abc123/design"),
-                evidence = AiEvidence(listOf("m-personal"))
-            )
-            q.contains("ima") && (q.contains("friday") || q.contains("ask")) -> AskAnswer(
-                question = question,
-                answerText = "Ima asked about Friday:",
-                structuredLines = listOf("\"Are we still going Friday?\""),
-                evidence = AiEvidence(listOf("m-ima")),
-                freshnessNote = "Unanswered — in Needs Attention"
-            )
-            q.contains("melli") -> {
-                val acc = s.accounts.first { it.id == "acc-melli" }
-                AskAnswer(
-                    question = question,
-                    answerText = "Latest known Melli balance",
-                    structuredLines = listOf(
-                        MoneyNormalizer.formatToman(acc.lastKnownBalanceToman ?: 0),
-                        "Updated ${acc.balanceUpdatedAt?.let { TimeFormat.relative(System.currentTimeMillis(), it) }}"
-                    ),
-                    evidence = AiEvidence(listOfNotNull(acc.balanceSourceMessageId)),
-                    freshnessNote = "Last known balance"
-                )
-            }
-            q.contains("meeting") -> AskAnswer(
-                question = question,
-                answerText = "Meeting",
-                structuredLines = listOf("5:30 PM", "Changed from 4:00 PM"),
-                evidence = AiEvidence(listOf("m-meet-1", "m-meet-2"))
-            )
             else -> {
-                val hits = search(question).take(5)
+                val hits = search(question).take(6)
                 AskAnswer(
                     question = question,
-                    answerText = if (hits.isEmpty()) "No matching messages found in your indexed history." else "Here are the most relevant messages:",
-                    structuredLines = hits.map { it.body.lines().first().take(80) },
-                    evidence = AiEvidence(hits.map { it.id })
+                    answerText = if (hits.isEmpty()) "No matching messages in the current source." else "Most relevant messages:",
+                    structuredLines = hits.map { msg ->
+                        val who = s.senders[msg.senderId]?.displayName ?: msg.senderId
+                        "$who · ${msg.body.lines().first().take(70)}"
+                    },
+                    evidence = AiEvidence(hits.map { it.id }),
+                    freshnessNote = if (s.sourceMode == SourceMode.MOCK) "Answering over Mock SMS" else "Answering over Device SMS"
                 )
             }
         }
@@ -360,8 +393,3 @@ class OrganizerRepository constructor(
 }
 
 enum class InboxFilter { ALL, PRIMARY, HIDDEN, ARCHIVED }
-
-private fun MockMessageSource.getMessagesBlocking(now: Long): List<Message> {
-    refresh(now)
-    return MockSmsDataset.messages(now)
-}

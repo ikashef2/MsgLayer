@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,6 +40,7 @@ fun OverviewScreen(
     onAsk: () -> Unit,
     onOpenMessage: (String) -> Unit,
     onOpenActivity: () -> Unit,
+    onOpenSettings: () -> Unit,
     vm: OverviewViewModel = viewModel()
 ) {
     val snap by vm.overview.collectAsStateWithLifecycle()
@@ -45,24 +50,39 @@ fun OverviewScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(snap.greeting, style = MaterialTheme.typography.displaySmall)
-            VerticalSpacer(4)
-            Text(
-                "${snap.attentionCount} things need attention",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Warning
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(snap.greeting, style = MaterialTheme.typography.displaySmall)
+                    VerticalSpacer(4)
+                    Text(
+                        "${snap.attentionCount} things need attention",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Warning
+                    )
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                }
+            }
         }
 
         item {
             SectionLabel("Needs Attention")
             QuietPanel {
-                snap.attentionItems.take(3).forEachIndexed { i, item ->
-                    if (i > 0) VerticalSpacer(10)
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(item.title, style = MaterialTheme.typography.titleMedium)
-                        Text(item.subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                        Text(TimeFormat.relative(System.currentTimeMillis(), item.timestamp), style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                if (snap.attentionItems.isEmpty()) {
+                    Text("Nothing urgent right now", color = TextSecondary)
+                } else {
+                    snap.attentionItems.take(5).forEachIndexed { i, item ->
+                        if (i > 0) VerticalSpacer(10)
+                        QuietPanel(onClick = { onOpenMessage(item.messageId) }) {
+                            Text(item.title, style = MaterialTheme.typography.titleMedium)
+                            Text(item.subtitle, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                            Text(TimeFormat.relative(System.currentTimeMillis(), item.timestamp), style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                        }
                     }
                 }
             }

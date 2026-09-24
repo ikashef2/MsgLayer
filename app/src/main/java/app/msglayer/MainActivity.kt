@@ -44,7 +44,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        AppGraph.repository
         setContent {
             MsgLayerTheme {
                 MsgLayerRoot()
@@ -101,7 +100,8 @@ fun MsgLayerRoot() {
                 OverviewScreen(
                     onAsk = { nav.navigate(Dest.Ask.route) },
                     onOpenMessage = { nav.navigate(Dest.MessageDetail.path(it)) },
-                    onOpenActivity = { nav.navigate(Dest.Activity.route) }
+                    onOpenActivity = { nav.navigate(Dest.Activity.route) },
+                    onOpenSettings = { nav.navigate(Dest.Settings.route) }
                 )
             }
             composable(Dest.Inbox.route) {
@@ -114,10 +114,15 @@ fun MsgLayerRoot() {
             composable(Dest.Search.route) {
                 SearchScreen(onOpenMessage = { nav.navigate(Dest.MessageDetail.path(it)) })
             }
-            composable(Dest.Rules.route) { RulesScreen() }
-            composable(Dest.Activity.route) { ActivityScreen() }
+            composable(Dest.Rules.route) {
+                RulesScreen(onBack = { nav.popBackStack() })
+            }
+            composable(Dest.Activity.route) {
+                ActivityScreen(onBack = { nav.popBackStack() })
+            }
             composable(Dest.Settings.route) {
                 SettingsScreen(
+                    onBack = { nav.popBackStack() },
                     onRules = { nav.navigate(Dest.Rules.route) },
                     onActivity = { nav.navigate(Dest.Activity.route) }
                 )
@@ -126,7 +131,10 @@ fun MsgLayerRoot() {
                 Dest.MessageDetail.route,
                 arguments = listOf(navArgument("id") { type = NavType.StringType })
             ) { entry ->
-                MessageDetailScreen(messageId = entry.arguments?.getString("id").orEmpty())
+                MessageDetailScreen(
+                    messageId = entry.arguments?.getString("id").orEmpty(),
+                    onBack = { nav.popBackStack() }
+                )
             }
         }
     }

@@ -3,7 +3,6 @@ package app.msglayer.ui.finance
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,18 +35,34 @@ fun FinanceScreen(vm: FinanceViewModel = viewModel()) {
             Text("Finance", style = MaterialTheme.typography.displaySmall)
             Text("Last known balances from SMS — not live banking", style = MaterialTheme.typography.bodyMedium, color = Warning)
         }
+        item { SectionLabel("Accounts") }
         item {
-            SectionLabel("Accounts")
             QuietPanel {
-                state.accounts.forEach { acc ->
-                    Text(acc.bankName, style = MaterialTheme.typography.titleMedium)
-                    Text(vm.format(acc.lastKnownBalanceToman), style = MaterialTheme.typography.headlineMedium)
-                    Text("Updated ${vm.relative(acc.balanceUpdatedAt)}", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
-                    VerticalSpacer(10)
+                if (state.accounts.isEmpty()) {
+                    Text("No accounts extracted yet", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Sync Device SMS from Settings, or use Mock SMS for demo balances.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                } else {
+                    state.accounts.forEach { acc ->
+                        Text(acc.bankName, style = MaterialTheme.typography.titleMedium)
+                        Text(vm.format(acc.lastKnownBalanceToman), style = MaterialTheme.typography.headlineMedium)
+                        Text("Updated ${vm.relative(acc.balanceUpdatedAt)}", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                        VerticalSpacer(10)
+                    }
                 }
             }
         }
         item { SectionLabel("Transactions") }
+        if (state.transactions.isEmpty()) {
+            item {
+                QuietPanel {
+                    Text("No transactions parsed from the current source.", color = TextSecondary)
+                }
+            }
+        }
         items(state.transactions) { tx ->
             QuietPanel {
                 KeyValueRow(tx.type.name.lowercase(), tx.amount.amountToman?.let { MoneyNormalizer.formatToman(it) } ?: tx.amount.originalText)

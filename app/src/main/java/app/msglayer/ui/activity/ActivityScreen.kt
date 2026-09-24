@@ -23,7 +23,10 @@ import app.msglayer.ui.components.QuietPanel
 import app.msglayer.ui.theme.TextSecondary
 
 @Composable
-fun ActivityScreen(vm: ActivityViewModel = viewModel()) {
+fun ActivityScreen(
+    onBack: () -> Unit = {},
+    vm: ActivityViewModel = viewModel()
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -31,6 +34,7 @@ fun ActivityScreen(vm: ActivityViewModel = viewModel()) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
+            TextButton(onClick = onBack) { Text("Back") }
             Text("Activity", style = MaterialTheme.typography.displaySmall)
             Text("Everything the organizer did — undoable when possible.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
         }

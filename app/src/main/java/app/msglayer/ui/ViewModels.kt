@@ -3,6 +3,8 @@ package app.msglayer.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.msglayer.AppGraph
+import app.msglayer.SourceMode
+import app.msglayer.SourceStatus
 import app.msglayer.core.common.MoneyNormalizer
 import app.msglayer.core.common.TimeFormat
 import app.msglayer.data.repository.InboxFilter
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class OverviewViewModel(
     private val repo: OrganizerRepository = AppGraph.repository
@@ -95,4 +98,49 @@ class MessageDetailViewModel(
     fun sender(id: String) = repo.sender(id)
     fun relatedFacts(messageId: String) =
         repo.state.value.facts.filter { messageId in it.sourceMessageIds }
+}
+
+class SettingsViewModel : ViewModel() {
+    val status: StateFlow<SourceStatus> = AppGraph.status
+    private val _busy = MutableStateFlow(false)
+    val busy = _busy.asStateFlow()
+    private val _toast = MutableStateFlow<String?>(null)
+    val toast = _toast.asStateFlow()
+
+    fun onPermissionResult(granted: Boolean) {
+        AppGraph.refreshStatus()
+        _toast.value = if (granted) "SMS permission granted — tap Sync Device SMS" else "SMS permission denied"
+    }
+
+    fun useMock() {
+        viewModelScope.launch {
+            _busy.value = true
+            val result = AppGraph.setModeAndSync(SourceMode.MOCK)
+            _busy.value = false
+            _toast.value = result.fold(
+                onSuccess = { "Loaded $it mock messages" },
+                onFailure = { it.message ?: "Mock sync failed" }
+            )
+        }
+    }
+
+    fun syncDeviceSms() {
+        viewModelScope.launch {
+            _busy.value = true
+            AppGraph.refreshStatus()
+            if (!AppGraph.hasSmsPermission()) {
+                _busy.value = false
+                _toast.value = "Grant SMS permission first"
+                return@launch
+            }
+            val result = AppGraph.setModeAndSync(SourceMode.DEVICE_SMS)
+            _busy.value = false
+            _toast.value = result.fold(
+                onSuccess = { "Synced $it device SMS messages" },
+                onFailure = { it.message ?: "Device SMS sync failed" }
+            )
+        }
+    }
+
+    fun clearToast() { _toast.value = null }
 }

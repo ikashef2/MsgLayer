@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -24,7 +25,10 @@ import app.msglayer.ui.components.SectionLabel
 import app.msglayer.ui.theme.TextSecondary
 
 @Composable
-fun RulesScreen(vm: RulesViewModel = viewModel()) {
+fun RulesScreen(
+    onBack: () -> Unit = {},
+    vm: RulesViewModel = viewModel()
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -32,6 +36,7 @@ fun RulesScreen(vm: RulesViewModel = viewModel()) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
+            TextButton(onClick = onBack) { Text("Back") }
             Text("Organization rules", style = MaterialTheme.typography.displaySmall)
             Text("Non-destructive only — never permanent delete.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             SectionLabel("Active")
